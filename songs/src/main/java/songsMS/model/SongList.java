@@ -24,7 +24,7 @@ public class SongList {
     @NotNull
     @ManyToOne
     @JoinColumn(name="ownerId")
-    private User owner;
+    private String ownerId;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -40,8 +40,8 @@ public class SongList {
 
     public SongList() {}
 
-    public SongList(User owner, String listName, boolean isPrivate) {
-        this.owner = owner;
+    public SongList(String ownerId, String listName, boolean isPrivate) {
+        this.ownerId = ownerId;
         this.listName = listName;
         this.isPrivate = isPrivate;
     }
@@ -56,12 +56,12 @@ public class SongList {
     }
 
     @XmlTransient
-    public User getOwner() {
-        return owner;
+    public String getOwnerId() {
+        return ownerId;
     }
 
-    public void setOwner(User owner) {
-        this.owner = owner;
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     @XmlElement(name = "songs")

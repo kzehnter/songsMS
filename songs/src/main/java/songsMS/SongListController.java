@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import songsMS.model.SongList;
-import songsMS.model.SongListsXmlRoot;
 import songsMS.repo.SongDao;
 import songsMS.repo.SongListDao;
 
@@ -33,13 +31,11 @@ public class SongListController {
 
     private SongListDao songListDao;
     private SongDao songDao;
-    private UserDao userDao;
     private ObjectMapper mapper = new ObjectMapper();
 
-    public SongListController(SongListDao songListDao, SongDao songDao, UserDao userDao) {
+    public SongListController(SongListDao songListDao, SongDao songDao) {
         this.songListDao = songListDao;
         this.songDao = songDao;
-        this.userDao = userDao;
     }
 
     @GetMapping
@@ -50,7 +46,8 @@ public class SongListController {
     ) throws IOException, JAXBException {
         if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        User u = userDao.findUser(userId);
+        // TODO: rewrite all of this
+        User u = findUser(userId);
         if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         List<SongList> songLists;
@@ -60,6 +57,7 @@ public class SongListController {
         } else {
             songLists = songListDao.findAllPublicListsByUserId(userId);
         }
+        ///////
 
         switch (accept) {
             case MediaType.APPLICATION_JSON_VALUE:
@@ -82,7 +80,7 @@ public class SongListController {
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwner()) && songList.getIsPrivate()) {
+        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwnerId()) && songList.getIsPrivate()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -109,7 +107,7 @@ public class SongListController {
                 throw new IllegalArgumentException("property 'name' must be provided");
             if (!doAllSongsExist(songList))
                 return ResponseEntity.badRequest().body("invalid Song information, please match with databse entries");
-            songList.setOwner(ControllerHelper.getUserForToken(auth));
+            songList.setOwnerId(ControllerHelper.getUserForToken(auth));
             listId = songListDao.saveList(songList);
         } catch (PersistenceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getStackTrace(e));
@@ -130,7 +128,7 @@ public class SongListController {
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwner())) {
+        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwnerId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

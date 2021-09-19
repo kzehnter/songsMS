@@ -35,12 +35,21 @@ public class ControllerHelper {
         return sw.toString();
     }
 
+//    String getUserIdForToken(String token) {
+//        String url = discoveryClient.getNextServerFromEureka("auth-service", false).getHomePageUrl();
+//        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/"+token, String.class);
+//        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
+//            return null;
+//        else
+//            return response.getBody();
+//    }
+
     static boolean doesTokenExist(String auth) {
         return UserController.getTokenMap().containsKey(auth);
     }
 
-    static boolean doesTokenMatchUser(String auth, User user) {
-        return UserController.getTokenMap().get(auth).equals(user);
+    static boolean doesTokenMatchUser(String auth, String userId) {
+        return UserController.getTokenMap().get(auth).equals(userId);
     }
 
     public static boolean doesUserIdExist(String userId) {
