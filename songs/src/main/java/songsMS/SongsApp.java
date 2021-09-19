@@ -13,10 +13,10 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
         HibernateJpaAutoConfiguration.class
 })
 @EnableEurekaClient
-public class AuthApp
+public class SongsApp
 {
     public static void main( String[] args )
     {
-        SpringApplication.run(AuthApp.class,args);
+        SpringApplication.run(SongsApp.class, args);
     }
 }
