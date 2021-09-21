@@ -1,5 +1,10 @@
 package songsMS;
 
+import com.netflix.discovery.DiscoveryClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 import songsMS.model.SongListsXmlRoot;
 import songsMS.model.SongsXmlRoot;
 
@@ -10,6 +15,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class ControllerHelper {
+    @Autowired
+    RestTemplate restTemplate;
+    @Autowired
+    DiscoveryClient discoveryClient;
 
     static String convertSongToXml(SongsXmlRoot songs) throws JAXBException {
         return convertToXml(songs, SongsXmlRoot.class);
@@ -35,33 +44,29 @@ public class ControllerHelper {
         return sw.toString();
     }
 
-//    String getUserIdForToken(String token) {
-//        String url = discoveryClient.getNextServerFromEureka("auth-service", false).getHomePageUrl();
-//        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/"+token, String.class);
-//        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
-//            return null;
-//        else
-//            return response.getBody();
-//    }
-
-    static boolean doesTokenExist(String auth) {
-        return UserController.getTokenMap().containsKey(auth);
+    String getUserIdForToken(String token) {
+        String url = discoveryClient.getNextServerFromEureka("auth", false).getHomePageUrl();
+        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/"+token, String.class);
+        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
+            return null;
+        else
+            return response.getBody();
     }
 
-    static boolean doesTokenMatchUser(String auth, String userId) {
-        return UserController.getTokenMap().get(auth).equals(userId);
+    boolean doesUserIdExist(String userId) {
+        String url = discoveryClient.getNextServerFromEureka("auth", false).getHomePageUrl();
+        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/id/"+userId, String.class);
+        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
+            return false;
+        else
+            return true;
     }
 
-    public static boolean doesUserIdExist(String userId) {
-        boolean doesExist = false;
-        for (User u: UserController.getTokenMap().values()) {
-            if (u.getUserId().equals(userId))
-                doesExist = true;
-        }
-        return doesExist;
+    boolean doesTokenExist(String auth) {
+        return getUserIdForToken(auth)!=null;
     }
 
-    public static User getUserForToken(String auth) {
-        return UserController.getTokenMap().get(auth);
+    boolean doesTokenMatchUserId(String auth, String userId) {
+        return getUserIdForToken(auth) == userId;
     }
 }

@@ -4,10 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import songsMS.model.SongList;
 import songsMS.model.SongListsXmlRoot;
-import songsMS.model.User;
-import songsMS.repository.SongDao;
-import songsMS.repository.SongListDao;
-import songsMS.repository.UserDao;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,6 +28,7 @@ public class SongListController {
     private SongListDao songListDao;
     private SongDao songDao;
     private ObjectMapper mapper = new ObjectMapper();
+    private ControllerHelper helper = new ControllerHelper();
 
     public SongListController(SongListDao songListDao, SongDao songDao) {
         this.songListDao = songListDao;
@@ -44,20 +41,15 @@ public class SongListController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth,
             @RequestParam String userId
     ) throws IOException, JAXBException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        // TODO: rewrite all of this
-        User u = findUser(userId);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesUserIdExist(userId)) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         List<SongList> songLists;
-
-        if (ControllerHelper.doesTokenMatchUser(auth, u)) {
+        if (helper.doesTokenMatchUserId(auth, userId)) {
             songLists = songListDao.findAllListsByUserId(userId);
         } else {
             songLists = songListDao.findAllPublicListsByUserId(userId);
         }
-        ///////
 
         switch (accept) {
             case MediaType.APPLICATION_JSON_VALUE:
@@ -75,12 +67,12 @@ public class SongListController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth,
             @PathVariable Integer id
     ) throws IOException, JAXBException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwnerId()) && songList.getIsPrivate()) {
+        if (!helper.doesTokenMatchUserId(auth, songList.getOwnerId()) && songList.getIsPrivate()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -96,7 +88,7 @@ public class SongListController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> postList(@RequestBody String listJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         int listId = -1;
         try {
@@ -107,7 +99,7 @@ public class SongListController {
                 throw new IllegalArgumentException("property 'name' must be provided");
             if (!doAllSongsExist(songList))
                 return ResponseEntity.badRequest().body("invalid Song information, please match with databse entries");
-            songList.setOwnerId(ControllerHelper.getUserForToken(auth));
+            songList.setOwnerId(helper.getUserIdForToken(auth));
             listId = songListDao.saveList(songList);
         } catch (PersistenceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getStackTrace(e));
@@ -123,12 +115,12 @@ public class SongListController {
 
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<String> deleteListById(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        if (!ControllerHelper.doesTokenMatchUser(auth, songList.getOwnerId())) {
+        if (!helper.doesTokenMatchUserId(auth, songList.getOwnerId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

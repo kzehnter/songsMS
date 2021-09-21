@@ -3,15 +3,14 @@ package songsMS;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.PersistenceException;
+import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,7 +23,7 @@ public class AuthController {
     private AuthDao dao;
     private ObjectMapper mapper = new ObjectMapper();
 
-    private static HashMap<String /*token*/, Auth /*userId*/> tokenMap = new HashMap<>();
+    private static HashMap<String /*token*/, String /*userId*/> tokenMap = new HashMap<>();
 
     // Dependency injection
     public AuthController(@Qualifier("authDaoImpl") AuthDao dao){
@@ -48,7 +47,7 @@ public class AuthController {
             if (existingAuth != null && existingAuth.getPassword().equals(auth.getPassword())) {
                 // generate token, put it in hashmap and request that for return body
                 String token = generateResponseToken();
-                tokenMap.put(token, existingAuth);
+                tokenMap.put(token, existingAuth.getUserId());
                 return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.TEXT_PLAIN).body(token);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(MediaType.TEXT_PLAIN).body("Declined: User and password don't match or user doesn't exist!");
@@ -58,6 +57,19 @@ public class AuthController {
         } catch (JsonProcessingException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(getStackTrace(e));
         }
+    }
+
+    @GetMapping(value = "/{auth}")
+    public ResponseEntity<String> getUserIdForToken(@PathVariable String auth) {
+        if (!tokenMap.containsKey(auth)) return ResponseEntity.notFound().build();
+        return new ResponseEntity<>(tokenMap.get(auth), HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/id/{id}")
+    public ResponseEntity<String> doesUserIdExist(@PathVariable String userId) {
+        if (dao.findAuth(userId) == null) {
+            return ResponseEntity.notFound().build();
+        } else return ResponseEntity.ok().build();
     }
 
     String generateResponseToken() {
@@ -76,7 +88,7 @@ public class AuthController {
         return sw.toString();
     }
 
-    public static HashMap<String, Auth> getTokenMap() {
+    public static HashMap<String, String> getTokenMap() {
         return tokenMap;
     }
 }

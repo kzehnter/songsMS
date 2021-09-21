@@ -22,8 +22,6 @@ public class SongList {
     private int listId;
 
     @NotNull
-    @ManyToOne
-    @JoinColumn(name="ownerId")
     private String ownerId;
 
     @ManyToMany(fetch = FetchType.EAGER)

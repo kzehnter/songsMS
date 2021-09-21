@@ -3,6 +3,7 @@ package songsMS.repo;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import songsMS.model.Song;
@@ -13,7 +14,6 @@ import java.util.List;
 @Repository
 @Transactional
 public class SongDaoImpl implements songsMS.repo.SongDao {
-
     @Autowired
     private SessionFactory sessionFactory;
 

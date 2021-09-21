@@ -28,6 +28,7 @@ public class SongController {
 
     private SongDao dao;
     private ObjectMapper mapper = new ObjectMapper();
+    private ControllerHelper helper = new ControllerHelper();
 
     public SongController(@Qualifier("songDaoImpl") SongDao dao) {
         this.dao = dao;
@@ -35,8 +36,7 @@ public class SongController {
 
     @GetMapping
     public ResponseEntity<String> getAllSongs(@RequestHeader(HttpHeaders.ACCEPT) String accept, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException, JAXBException {
-        // checks for auth token in usercontroller hashmap
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         switch (accept) {
             case MediaType.APPLICATION_JSON_VALUE:
@@ -50,7 +50,7 @@ public class SongController {
 
     @GetMapping(value = "/{id}")
     public ResponseEntity<String> getSong(@RequestHeader(HttpHeaders.ACCEPT) String accept, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException, JAXBException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         Song song = dao.findSong(id);
         if (song == null) return ResponseEntity.notFound().build();
@@ -67,7 +67,7 @@ public class SongController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> postSong(@RequestBody String songJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         int songId = -1;
         try {
@@ -87,7 +87,7 @@ public class SongController {
 
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, value = "/{id}")
     public ResponseEntity<String> updateSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id, @RequestBody String songJson) throws IOException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
             Song song = mapper.readValue(songJson, Song.class);
@@ -110,7 +110,7 @@ public class SongController {
 
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<String> deleteSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException {
-        if (!ControllerHelper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
             dao.deleteSong(id);
