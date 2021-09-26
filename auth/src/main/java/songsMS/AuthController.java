@@ -3,14 +3,12 @@ package songsMS;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.PersistenceException;
-import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -60,16 +58,16 @@ public class AuthController {
     }
 
     @GetMapping(value = "/{auth}")
-    public ResponseEntity<String> getUserIdForToken(@PathVariable String auth) {
-        if (!tokenMap.containsKey(auth)) return ResponseEntity.notFound().build();
-        return new ResponseEntity<>(tokenMap.get(auth), HttpStatus.OK);
+    public String getUserIdForToken(@PathVariable String auth) {
+        if (!tokenMap.containsKey(auth)) return null;
+        return tokenMap.get(auth);
     }
 
     @GetMapping(value = "/id/{id}")
-    public ResponseEntity<String> doesUserIdExist(@PathVariable String userId) {
-        if (dao.findAuth(userId) == null) {
-            return ResponseEntity.notFound().build();
-        } else return ResponseEntity.ok().build();
+    public String doesUserIdExist(@PathVariable String userId) {
+        if (dao.findAuth(userId) != null) {
+            return "true";
+        } else return null;
     }
 
     String generateResponseToken() {

@@ -1,9 +1,12 @@
 package songsMS;
 
-import com.netflix.discovery.DiscoveryClient;
+import com.netflix.discovery.EurekaClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import songsMS.model.SongListsXmlRoot;
 import songsMS.model.SongsXmlRoot;
@@ -14,11 +17,12 @@ import javax.xml.bind.Marshaller;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@Component
 public class ControllerHelper {
     @Autowired
-    RestTemplate restTemplate;
-    @Autowired
-    DiscoveryClient discoveryClient;
+    private RestTemplate restTemplate;
+    // @Autowired
+    // private EurekaClient eurekaClient;
 
     static String convertSongToXml(SongsXmlRoot songs) throws JAXBException {
         return convertToXml(songs, SongsXmlRoot.class);
@@ -45,28 +49,29 @@ public class ControllerHelper {
     }
 
     String getUserIdForToken(String token) {
-        String url = discoveryClient.getNextServerFromEureka("auth", false).getHomePageUrl();
-        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/"+token, String.class);
-        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
-            return null;
-        else
-            return response.getBody();
+        String url = "http://localhost:8098";
+        return restTemplate.exchange(url + "/auth/{token}",
+                HttpMethod.GET, null, new ParameterizedTypeReference<String>() {}, token).getBody();
     }
 
     boolean doesUserIdExist(String userId) {
-        String url = discoveryClient.getNextServerFromEureka("auth", false).getHomePageUrl();
-        ResponseEntity<String> response = restTemplate.getForEntity(url+"/auth/id/"+userId, String.class);
-        if (response.getStatusCode().equals(HttpStatus.NOT_FOUND))
-            return false;
-        else
-            return true;
+        String url = "http://localhost:8098";
+        String response = restTemplate.exchange(url + "/auth/id/{userId}",
+                HttpMethod.GET, null, new ParameterizedTypeReference<String>() {}, userId).getBody();
+        return (response != null);
+
     }
 
     boolean doesTokenExist(String auth) {
-        return getUserIdForToken(auth)!=null;
+        return getUserIdForToken(auth) != null;
     }
 
     boolean doesTokenMatchUserId(String auth, String userId) {
         return getUserIdForToken(auth) == userId;
+    }
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        return builder.build();
     }
 }
