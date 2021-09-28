@@ -25,14 +25,15 @@ import static songsMS.ControllerHelper.getStackTrace;
 @RequestMapping(value = "/songLists")
 public class SongListController {
 
-    private SongListDao songListDao;
-    private SongDao songDao;
-    private ObjectMapper mapper = new ObjectMapper();
-    private ControllerHelper helper = new ControllerHelper();
+    private final SongListDao songListDao;
+    private final SongDao songDao;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final ControllerHelper helper;
 
-    public SongListController(SongListDao songListDao, SongDao songDao) {
+    public SongListController(SongListDao songListDao, SongDao songDao, ControllerHelper helper) {
         this.songListDao = songListDao;
         this.songDao = songDao;
+        this.helper = helper;
     }
 
     @GetMapping
@@ -41,7 +42,7 @@ public class SongListController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth,
             @RequestParam String userId
     ) throws IOException, JAXBException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         if (!helper.doesUserIdExist(userId)) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         List<SongList> songLists;
@@ -67,7 +68,7 @@ public class SongListController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth,
             @PathVariable Integer id
     ) throws IOException, JAXBException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -87,18 +88,18 @@ public class SongListController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> postList(@RequestBody String listJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<String> postList(@RequestBody String listJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        int listId = -1;
+        int listId;
         try {
-            if (listJson.toLowerCase().contains("\"listId\":"))
+            if (listJson.toLowerCase().contains("\"listid\":"))
                 return ResponseEntity.badRequest().body("list IDs are not to be manually assigned");
             SongList songList = mapper.readValue(listJson, SongList.class);
             if (songList.getListName() == null)
                 throw new IllegalArgumentException("property 'name' must be provided");
-            if (!doAllSongsExist(songList))
-                return ResponseEntity.badRequest().body("invalid Song information, please match with databse entries");
+            if (doNotAllSongsExist(songList))
+                return ResponseEntity.badRequest().body("invalid Song information, please match with database entries");
             songList.setOwnerId(helper.getUserIdForToken(auth));
             listId = songListDao.saveList(songList);
         } catch (PersistenceException e) {
@@ -109,13 +110,13 @@ public class SongListController {
         return ResponseEntity.created(URI.create("/rest/songLists/" + listId)).contentType(MediaType.TEXT_PLAIN).build();
     }
 
-    private boolean doAllSongsExist(SongList songList) {
-        return songDao.findAllSongs().containsAll(songList.getSongs());
+    private boolean doNotAllSongsExist(SongList songList) {
+        return !songDao.findAllSongs().containsAll(songList.getSongs());
     }
 
     @DeleteMapping(value = "/{id}")
-    public ResponseEntity<String> deleteListById(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<String> deleteListById(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         SongList songList = songListDao.findListById(id);
         if (songList == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -130,6 +131,41 @@ public class SongListController {
             return ResponseEntity.notFound().build();
         } catch (PersistenceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getStackTrace(e));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, value = "/{id}")
+    public ResponseEntity<String> updateList(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id, @RequestBody String listJson) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            SongList newList = mapper.readValue(listJson, SongList.class);
+
+            if (id == 0)
+                throw new IllegalArgumentException("property 'id' must be provided and can not be 0");
+            if (doNotAllSongsExist(newList))
+                return ResponseEntity.badRequest().body("invalid Song information, please match with database entries");
+
+            SongList firstList = songListDao.findListById(id);
+            if (!helper.doesTokenMatchUserId(auth, firstList.getOwnerId()))
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            newList.setOwnerId(firstList.getOwnerId());
+            newList.setListId(id);
+            if (!listJson.contains("\"isPrivate\":"))
+                newList.setIsPrivate(firstList.getIsPrivate());
+            if (newList.getListName() == null)
+                newList.setListName(firstList.getListName());
+            if (newList.getSongs() == null)
+                newList.setSongs(firstList.getSongs());
+
+            songListDao.updateSong(newList);
+        } catch (PersistenceException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getStackTrace(e));
+        } catch (JsonProcessingException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(getStackTrace(e));
+        } catch (IndexOutOfBoundsException e) {
+            return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
     }

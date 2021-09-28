@@ -2,8 +2,6 @@ package songsMS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import songsMS.model.Song;
-import songsMS.model.SongsXmlRoot;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,17 +24,18 @@ import static songsMS.ControllerHelper.getStackTrace;
 @RequestMapping(value = "/songs")
 public class SongController {
 
-    private SongDao dao;
-    private ObjectMapper mapper = new ObjectMapper();
-    private ControllerHelper helper = new ControllerHelper();
+    private final SongDao dao;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final ControllerHelper helper;
 
-    public SongController(@Qualifier("songDaoImpl") SongDao dao) {
+    public SongController(@Qualifier("songDaoImpl") SongDao dao, @Qualifier("controllerHelper") ControllerHelper helper) {
         this.dao = dao;
+        this.helper = helper;
     }
 
     @GetMapping
     public ResponseEntity<String> getAllSongs(@RequestHeader(HttpHeaders.ACCEPT) String accept, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException, JAXBException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         switch (accept) {
             case MediaType.APPLICATION_JSON_VALUE:
@@ -50,7 +49,7 @@ public class SongController {
 
     @GetMapping(value = "/{id}")
     public ResponseEntity<String> getSong(@RequestHeader(HttpHeaders.ACCEPT) String accept, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException, JAXBException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         Song song = dao.findSong(id);
         if (song == null) return ResponseEntity.notFound().build();
@@ -66,10 +65,10 @@ public class SongController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> postSong(@RequestBody String songJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) throws IOException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<String> postSong(@RequestBody String songJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        int songId = -1;
+        int songId;
         try {
             if (songJson.toLowerCase().contains("\"id\":"))
                 return ResponseEntity.badRequest().body("song IDs are not to be manually assigned");
@@ -86,8 +85,8 @@ public class SongController {
     }
 
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, value = "/{id}")
-    public ResponseEntity<String> updateSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id, @RequestBody String songJson) throws IOException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<String> updateSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id, @RequestBody String songJson) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
             Song song = mapper.readValue(songJson, Song.class);
@@ -109,8 +108,8 @@ public class SongController {
     }
 
     @DeleteMapping(value = "/{id}")
-    public ResponseEntity<String> deleteSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) throws IOException {
-        if (!helper.doesTokenExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<String> deleteSong(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth, @PathVariable Integer id) {
+        if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
             dao.deleteSong(id);

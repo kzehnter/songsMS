@@ -70,4 +70,18 @@ public class SongListDaoImpl implements songsMS.repo.SongListDao {
             throw new PersistenceException(e);
         }
     }
+
+    @Override
+    public void updateSong(SongList list) throws PersistenceException {
+        try {
+            if (findListById(list.getListId()) == null)
+                throw new IndexOutOfBoundsException("song to be updated does not exist (invalid id: "+list.getListId()+")");
+            sessionFactory.getCurrentSession().clear();
+            sessionFactory.getCurrentSession().update(list);
+        } catch (IndexOutOfBoundsException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PersistenceException(e);
+        }
+    }
 }

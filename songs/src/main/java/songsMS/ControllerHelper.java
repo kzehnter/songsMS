@@ -1,9 +1,6 @@
 package songsMS;
 
-import com.netflix.discovery.EurekaClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -16,13 +13,12 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 
 @Component
 public class ControllerHelper {
     @Autowired
     private RestTemplate restTemplate;
-    // @Autowired
-    // private EurekaClient eurekaClient;
 
     static String convertSongToXml(SongsXmlRoot songs) throws JAXBException {
         return convertToXml(songs, SongsXmlRoot.class);
@@ -50,7 +46,7 @@ public class ControllerHelper {
 
     String getUserIdForToken(String token) {
         String url = "http://localhost:8098";
-        return restTemplate.exchange(url + "/auth/{token}",
+        return restTemplate.exchange(url + "/auth/token/{token}",
                 HttpMethod.GET, null, new ParameterizedTypeReference<String>() {}, token).getBody();
     }
 
@@ -62,16 +58,11 @@ public class ControllerHelper {
 
     }
 
-    boolean doesTokenExist(String auth) {
-        return getUserIdForToken(auth) != null;
+    boolean doesTokenNotExist(String auth) {
+        return getUserIdForToken(auth) == null;
     }
 
     boolean doesTokenMatchUserId(String auth, String userId) {
-        return getUserIdForToken(auth) == userId;
-    }
-
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.build();
+        return Objects.equals(getUserIdForToken(auth), userId);
     }
 }

@@ -49,7 +49,6 @@ public class SongDaoImpl implements songsMS.repo.SongDao {
 
     @Override
     public void updateSong(Song song) throws PersistenceException, IndexOutOfBoundsException {
-
         try {
             if (findSong(song.getId()) == null)
                 throw new IndexOutOfBoundsException("song to be updated does not exist (invalid id: "+song.getId()+")");

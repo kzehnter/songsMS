@@ -57,13 +57,13 @@ public class AuthController {
         }
     }
 
-    @GetMapping(value = "/{auth}")
+    @GetMapping(value = "/token/{auth}")
     public String getUserIdForToken(@PathVariable String auth) {
         if (!tokenMap.containsKey(auth)) return null;
         return tokenMap.get(auth);
     }
 
-    @GetMapping(value = "/id/{id}")
+    @GetMapping(value = "/id/{userId}")
     public String doesUserIdExist(@PathVariable String userId) {
         if (dao.findAuth(userId) != null) {
             return "true";
@@ -75,7 +75,7 @@ public class AuthController {
         Random random = new Random();
         for (int i=0; i<array.length; i++) {
             // assigned characters ranging from 33 '!' to 126 '~'
-            array[i] = (char) (random.nextInt(93)+33);
+            array[i] = (char) (random.nextInt(26)+'a');
         }
         return new String(array);
     }

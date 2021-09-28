@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication(exclude = {
@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
         DataSourceTransactionManagerAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class
 })
-@EnableEurekaClient
 public class SongsApp
 {
     public static void main( String[] args )
@@ -28,6 +27,7 @@ public class SongsApp
     }
 
     @Bean
+    @Primary
     public ControllerHelper getControllerHelper() {
         return new ControllerHelper();
     }

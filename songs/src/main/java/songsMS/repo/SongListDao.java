@@ -16,4 +16,6 @@ public interface SongListDao {
     void deleteList(Integer id) throws PersistenceException, IndexOutOfBoundsException;
 
     int saveList(SongList songList) throws PersistenceException;
+
+    void updateSong(SongList list) throws PersistenceException;
 }
