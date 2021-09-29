@@ -37,8 +37,8 @@ public class CoverController {
     }
 
     @PostMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable Integer id) {
-        if (!file.getContentType().contains(""))
+    public ResponseEntity<String> uploadFile(@RequestParam(value = "file", required = false) MultipartFile file, @PathVariable Integer id) {
+        if (!Objects.equals(file.getContentType(), "image/jpeg"))
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         try {
             storageService.save(file, "cover-"+id);
