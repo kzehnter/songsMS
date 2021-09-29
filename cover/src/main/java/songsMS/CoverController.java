@@ -1,5 +1,6 @@
 package songsMS;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,19 +15,18 @@ import java.net.URI;
 import java.util.Objects;
 
 @RestController
-@RequestMapping(value = "/cover")
 public class CoverController {
-    private StorageService service;
+    private StorageService storageService;
 
-    public CoverController(StorageService service) {
-        this.service = service;
+    public CoverController(@Qualifier("storageServiceImpl") StorageService storageService) {
+        this.storageService = storageService;
     }
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Resource> getCover(@PathVariable int id){
+    public ResponseEntity<Resource> getCover(@PathVariable Integer id){
         Resource file;
         try {
-            file = service.load("cover"+id);
+            file = storageService.load("cover"+id);
         } catch (FileNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (IOException e) {
@@ -37,15 +37,15 @@ public class CoverController {
     }
 
     @PostMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadFile(@RequestBody MultipartFile file, @PathVariable int id) {
-        if (!Objects.equals(file.getContentType(), "image/jpg"))
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable Integer id) {
+        if (!file.getContentType().contains(""))
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         try {
-            service.save(file, "song-"+id);
+            storageService.save(file, "cover-"+id);
         }
         catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.created(URI.create("/download/"+id)).contentType(MediaType.TEXT_PLAIN).build();
+        return ResponseEntity.created(URI.create("/cover/"+id)).contentType(MediaType.TEXT_PLAIN).build();
     }
 }

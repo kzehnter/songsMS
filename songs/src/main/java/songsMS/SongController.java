@@ -21,7 +21,7 @@ import static songsMS.ControllerHelper.convertSongToXml;
 import static songsMS.ControllerHelper.getStackTrace;
 
 @RestController
-@RequestMapping(value = "/songs")
+@RequestMapping(value="/songs")
 public class SongController {
 
     private final SongDao dao;
@@ -120,6 +120,4 @@ public class SongController {
         }
         return ResponseEntity.noContent().build();
     }
-
-
 }

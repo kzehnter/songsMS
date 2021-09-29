@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Random;
 
 @RestController
-@RequestMapping(value = "/auth")
 public class AuthController {
     private AuthDao dao;
     private ObjectMapper mapper = new ObjectMapper();

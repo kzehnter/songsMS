@@ -1,5 +1,5 @@
 server:
-  port: 9098
+  port: 8097
 
 eureka:
   instance:
@@ -16,4 +16,8 @@ eureka:
 
 spring:
   application:
-    name: songs
+    name: cover
+
+management:
+  security:
+    enabled: false

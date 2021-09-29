@@ -3,11 +3,10 @@ package songsMS;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
-import javax.validation.Valid;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +15,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-public class StorageServiceImpl implements StorageService{
+@Service
+public class StorageServiceImpl implements StorageService {
+
     private final Path path;
 
-    public StorageServiceImpl(@Value("$(storage.location}") String path) {
+    public StorageServiceImpl(@Value("${storage.location}") String path) {
         this.path = Paths.get(path);
     }
 

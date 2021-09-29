@@ -45,13 +45,13 @@ public class ControllerHelper {
     }
 
     String getUserIdForToken(String token) {
-        String url = "http://localhost:8098";
+        String url = "http://localhost:8080";
         return restTemplate.exchange(url + "/auth/token/{token}",
                 HttpMethod.GET, null, new ParameterizedTypeReference<String>() {}, token).getBody();
     }
 
     boolean doesUserIdExist(String userId) {
-        String url = "http://localhost:8098";
+        String url = "http://localhost:8080";
         String response = restTemplate.exchange(url + "/auth/id/{userId}",
                 HttpMethod.GET, null, new ParameterizedTypeReference<String>() {}, userId).getBody();
         return (response != null);
