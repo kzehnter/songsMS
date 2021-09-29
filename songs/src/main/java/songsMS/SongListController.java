@@ -88,7 +88,8 @@ public class SongListController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> postList(@RequestBody String listJson, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
+    public ResponseEntity<String> postList(@RequestBody String listJson,
+                                           @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
         if (helper.doesTokenNotExist(auth)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         int listId;

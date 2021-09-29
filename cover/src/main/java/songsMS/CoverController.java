@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.Objects;
 
 @RestController
+@RequestMapping(value = "/cover")
 public class CoverController {
     private StorageService service;
 
@@ -36,7 +37,7 @@ public class CoverController {
     }
 
     @PostMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable int id) {
+    public ResponseEntity<String> uploadFile(@RequestBody MultipartFile file, @PathVariable int id) {
         if (!Objects.equals(file.getContentType(), "image/jpg"))
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         try {
